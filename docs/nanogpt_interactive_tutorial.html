@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>nanoGPT 互动学习驾驶舱</title>
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #65707d;
+      --line: #d8dee8;
+      --paper: #fbfaf7;
+      --panel: #ffffff;
+      --panel-2: #f3f6f9;
+      --blue: #1d6fb8;
+      --green: #18875f;
+      --rose: #be3f5a;
+      --gold: #a66b00;
+      --violet: #7556a8;
+      --shadow: 0 16px 40px rgba(28, 38, 54, 0.10);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(246, 248, 251, 0.92), rgba(251, 250, 247, 0.95)),
+        url("../assets/nanogpt.jpg") top center / min(960px, 100vw) auto no-repeat fixed;
+      font: 16px/1.58 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 288px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      padding: 22px 18px;
+    }
+
+    .brand {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+      margin: 22px 0;
+    }
+
+    .nav a {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      text-decoration: none;
+      border-color: var(--line);
+      background: var(--panel-2);
+    }
+
+    .dot {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dot.blue { background: var(--blue); }
+    .dot.green { background: var(--green); }
+    .dot.rose { background: var(--rose); }
+    .dot.gold { background: var(--gold); }
+    .dot.violet { background: var(--violet); }
+
+    .progress-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--panel);
+    }
+
+    .progress-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .meter {
+      height: 10px;
+      border-radius: 999px;
+      background: #e8edf3;
+      overflow: hidden;
+    }
+
+    .meter span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      transition: width 180ms ease;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 34px clamp(18px, 4vw, 54px) 70px;
+    }
+
+    .hero {
+      min-height: 48vh;
+      display: grid;
+      align-content: end;
+      padding: min(8vw, 72px) 0 28px;
+      border-bottom: 1px solid rgba(216, 222, 232, 0.75);
+      margin-bottom: 26px;
+    }
+
+    .hero h2 {
+      max-width: 980px;
+      margin: 0;
+      font-size: clamp(36px, 7vw, 76px);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 18px 0 0;
+      color: #3d4652;
+      font-size: clamp(17px, 2.2vw, 22px);
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .btn {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 8px 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+    }
+
+    .btn.primary {
+      color: #fff;
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px rgba(28, 38, 54, 0.10);
+    }
+
+    section {
+      scroll-margin-top: 24px;
+      margin: 30px 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .section-title h3 {
+      margin: 0;
+      font-size: clamp(25px, 3vw, 38px);
+      letter-spacing: 0;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 560px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      grid-column: span 4;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .card.wide {
+      grid-column: span 8;
+    }
+
+    .card.full {
+      grid-column: 1 / -1;
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .card p {
+      margin: 0 0 10px;
+      color: #35404b;
+    }
+
+    .card small {
+      color: var(--muted);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #485260;
+      padding: 4px 9px;
+      font-size: 13px;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #101821;
+      color: #e7edf5;
+      border-radius: var(--radius);
+      padding: 14px;
+      overflow: auto;
+      margin: 12px 0 0;
+    }
+
+    .code-ref {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 3px 9px;
+      background: #f7f9fb;
+      color: #26313d;
+      font-size: 13px;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(112px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .pipe-node {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      min-height: 106px;
+      padding: 12px;
+      display: grid;
+      align-content: start;
+      gap: 6px;
+      position: relative;
+    }
+
+    .pipe-node::after {
+      content: ">";
+      position: absolute;
+      right: -10px;
+      top: 40px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .pipe-node:last-child::after {
+      content: "";
+    }
+
+    .pipe-node strong {
+      font-size: 15px;
+    }
+
+    .pipe-node span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .architecture {
+      display: grid;
+      gap: 10px;
+    }
+
+    .arch-layer {
+      display: grid;
+      grid-template-columns: 142px 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .arch-label {
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #f8fafc;
+      font-weight: 700;
+    }
+
+    .arch-boxes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .arch-box {
+      min-height: 70px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    .arch-box.active {
+      outline: 3px solid rgba(29, 111, 184, 0.18);
+      border-color: var(--blue);
+    }
+
+    .arch-box b {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .arch-box span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .explainer {
+      min-height: 132px;
+      border-left: 4px solid var(--blue);
+      background: #eef5fb;
+      padding: 14px 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .demo-controls {
+      display: grid;
+      gap: 12px;
+    }
+
+    textarea,
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 12px;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .token-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 42px;
+      padding: 10px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .token {
+      display: inline-grid;
+      gap: 2px;
+      min-width: 36px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      background: #eef3f7;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .token.selected {
+      background: #dcecf8;
+      outline: 2px solid var(--blue);
+    }
+
+    .token i {
+      font-style: normal;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .attention-grid {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(26px, 1fr));
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      color: #10202f;
+      font-size: 11px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .locked {
+      background: repeating-linear-gradient(135deg, #edf0f4, #edf0f4 5px, #dce2e8 5px, #dce2e8 10px);
+      color: #7b8692;
+    }
+
+    .sliders {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .slider-row {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 20px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stepper {
+      display: grid;
+      gap: 10px;
+    }
+
+    .train-step {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: #fff;
+    }
+
+    .train-step.current {
+      border-color: var(--green);
+      outline: 3px solid rgba(24, 135, 95, 0.14);
+      background: #f2fbf7;
+    }
+
+    .quiz {
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 12px 14px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .check input {
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      accent-color: var(--green);
+    }
+
+    .note {
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      background: #fff8e8;
+      border: 1px solid #ead6a2;
+      color: #4e3a12;
+    }
+
+    .kbd {
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 1px 6px;
+      background: #fff;
+      font-size: 13px;
+      color: #384352;
+    }
+
+    @media (max-width: 1100px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .nav {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .card,
+      .card.wide {
+        grid-column: span 6;
+      }
+
+      .pipeline {
+        grid-template-columns: repeat(3, minmax(112px, 1fr));
+      }
+
+      .pipe-node::after {
+        content: "";
+      }
+    }
+
+    @media (max-width: 720px) {
+      .main {
+        padding-inline: 16px;
+      }
+
+      .nav,
+      .grid,
+      .pipeline,
+      .arch-layer,
+      .arch-boxes,
+      .sliders,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card,
+      .card.wide,
+      .card.full {
+        grid-column: 1 / -1;
+      }
+
+      .section-title {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>nanoGPT 学习驾驶舱</h1>
+        <p>从 token 到训练循环，把这个仓库拆成可以亲手理解的小块。</p>
+      </div>
+
+      <nav class="nav" aria-label="学习章节">
+        <a class="active" href="#map"><span class="dot blue">1</span><span>项目地图</span></a>
+        <a href="#concept"><span class="dot green">2</span><span>GPT 心智模型</span></a>
+        <a href="#model"><span class="dot rose">3</span><span>模型结构</span></a>
+        <a href="#training"><span class="dot gold">4</span><span>训练循环</span></a>
+        <a href="#sampling"><span class="dot violet">5</span><span>生成文本</span></a>
+        <a href="#lab"><span class="dot blue">6</span><span>动手实验</span></a>
+      </nav>
+
+      <div class="progress-card">
+        <strong>学习进度</strong>
+        <div class="meter" aria-hidden="true"><span id="progressBar"></span></div>
+        <p id="progressText">完成 0 / 8 个练习</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="hero">
+        <h2>把 GPT 拆开看：它其实在认真预测下一个 token。</h2>
+        <p>nanoGPT 的可爱之处是：没有庞大框架，没有神秘服务，核心就是一个 Transformer 模型、一条训练循环、一个采样脚本。学会这三个文件，你就能读懂现代 GPT 的骨架。</p>
+        <div class="quick-actions">
+          <a class="btn primary" href="#lab">开始动手</a>
+          <a class="btn" href="https://github.com/karpathy/nanoGPT/blob/master/model.py">打开 model.py</a>
+          <a class="btn" href="https://github.com/karpathy/nanoGPT/blob/master/train.py">打开 train.py</a>
+        </div>
+      </header>
+
+      <section id="map">
+        <div class="section-title">
+          <h3>项目地图</h3>
+          <p>先别急着看数学。先知道每个文件在整条链路里扮演谁，就像先看城市地图再逛街。</p>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h4><span class="code-ref">data/*/prepare.py</span></h4>
+            <p>把原始文本变成整数序列。字符级 Shakespeare 会生成 `train.bin`、`val.bin` 和 `meta.pkl`。</p>
+            <div class="tag-row"><span class="tag">文本</span><span class="tag">token id</span><span class="tag">词表</span></div>
+          </article>
+
+          <article class="card">
+            <h4><span class="code-ref">model.py</span></h4>
+            <p>GPT 本体：Embedding、Causal Self-Attention、MLP、LayerNorm、残差连接、loss、generate。</p>
+            <div class="tag-row"><span class="tag">Transformer</span><span class="tag">注意力</span><span class="tag">logits</span></div>
+          </article>
+
+          <article class="card">
+            <h4><span class="code-ref">train.py</span></h4>
+            <p>训练循环：取 batch、前向传播、算 loss、反向传播、AdamW 更新、评估、保存 checkpoint。</p>
+            <div class="tag-row"><span class="tag">optimizer</span><span class="tag">checkpoint</span><span class="tag">DDP</span></div>
+          </article>
+
+          <article class="card">
+            <h4><span class="code-ref">sample.py</span></h4>
+            <p>加载训练好的模型或 GPT-2 权重，用 prompt 开始逐 token 采样。</p>
+            <div class="tag-row"><span class="tag">temperature</span><span class="tag">top_k</span><span class="tag">decode</span></div>
+          </article>
+
+          <article class="card">
+            <h4><span class="code-ref">config/*.py</span></h4>
+            <p>训练配方。比如 `train_shakespeare_char.py` 会把默认 GPT-2 训练配置改成小模型。</p>
+            <div class="tag-row"><span class="tag">batch_size</span><span class="tag">block_size</span><span class="tag">n_layer</span></div>
+          </article>
+
+          <article class="card">
+            <h4><span class="code-ref">configurator.py</span></h4>
+            <p>很朴素的配置覆盖器：先执行配置文件，再应用命令行 `--key=value` 覆盖。</p>
+            <div class="tag-row"><span class="tag">override</span><span class="tag">globals</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="concept">
+        <div class="section-title">
+          <h3>GPT 心智模型</h3>
+          <p>一句话版本：给它一串 token，它对每个位置预测“下一个 token 应该是谁”。</p>
+        </div>
+
+        <div class="card full">
+          <div class="pipeline" aria-label="GPT 数据流">
+            <div class="pipe-node"><strong>1. 文本</strong><span>`To be` 这种字符串。</span></div>
+            <div class="pipe-node"><strong>2. 编码</strong><span>字符或 BPE token 变成整数。</span></div>
+            <div class="pipe-node"><strong>3. 嵌入</strong><span>整数查表，变成向量。</span></div>
+            <div class="pipe-node"><strong>4. Transformer</strong><span>用上下文混合信息。</span></div>
+            <div class="pipe-node"><strong>5. logits</strong><span>给词表里每个 token 打分。</span></div>
+            <div class="pipe-node"><strong>6. 采样</strong><span>选一个 token 接到末尾。</span></div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>Token 小玩具</h4>
+            <p>这里用“字符级 token”演示，和 `data/shakespeare_char/prepare.py` 的思路一样：每种字符分配一个整数 id。</p>
+            <div class="demo-controls">
+              <textarea id="tokenInput" aria-label="输入一段文本">To be, or not to be</textarea>
+              <button class="btn" id="tokenizeBtn" type="button">编码这句话</button>
+              <div class="token-strip" id="tokenOutput" aria-live="polite"></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <h4>这个项目里有两种编码</h4>
+            <p><b>字符级：</b>`shakespeare_char` 只有约 65 个 token，适合新手快速训练。</p>
+            <p><b>GPT-2 BPE：</b>`openwebtext` 和普通 GPT-2 使用 `tiktoken`，词表约 50k。</p>
+            <div class="note">先学字符级模型最舒服：token 就是字符，少了一层 tokenizer 的魔法烟雾。</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="model">
+        <div class="section-title">
+          <h3>模型结构</h3>
+          <p>nanoGPT 的模型像一座重复堆叠的小工厂：每层都先看上下文，再做一次非线性加工。</p>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>点击模块，看它负责什么</h4>
+            <div class="architecture" id="architecture">
+              <div class="arch-layer">
+                <div class="arch-label">输入</div>
+                <div class="arch-boxes">
+                  <button class="arch-box active" type="button" data-key="wte"><b>wte</b><span>token embedding</span></button>
+                  <button class="arch-box" type="button" data-key="wpe"><b>wpe</b><span>position embedding</span></button>
+                  <button class="arch-box" type="button" data-key="drop"><b>drop</b><span>dropout</span></button>
+                  <button class="arch-box" type="button" data-key="block"><b>Block x N</b><span>重复 n_layer 次</span></button>
+                </div>
+              </div>
+              <div class="arch-layer">
+                <div class="arch-label">Block</div>
+                <div class="arch-boxes">
+                  <button class="arch-box" type="button" data-key="ln"><b>LayerNorm</b><span>稳定每层输入</span></button>
+                  <button class="arch-box" type="button" data-key="attn"><b>Causal Attention</b><span>只看左边历史</span></button>
+                  <button class="arch-box" type="button" data-key="mlp"><b>MLP</b><span>逐位置加工</span></button>
+                  <button class="arch-box" type="button" data-key="resid"><b>Residual</b><span>x + 子模块输出</span></button>
+                </div>
+              </div>
+              <div class="arch-layer">
+                <div class="arch-label">输出</div>
+                <div class="arch-boxes">
+                  <button class="arch-box" type="button" data-key="lnf"><b>ln_f</b><span>最后归一化</span></button>
+                  <button class="arch-box" type="button" data-key="head"><b>lm_head</b><span>映射到词表分数</span></button>
+                  <button class="arch-box" type="button" data-key="loss"><b>loss</b><span>cross entropy</span></button>
+                  <button class="arch-box" type="button" data-key="generate"><b>generate</b><span>循环预测下一个</span></button>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="card">
+            <h4>模块说明</h4>
+            <div class="explainer" id="moduleExplainer"></div>
+          </aside>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>Causal Attention 小演示</h4>
+            <p>点一个 token，看它在 GPT 里能“看见”谁。未来位置会被 mask 掉，所以模型训练时不能偷看答案。</p>
+            <div class="token-strip" id="attentionTokens"></div>
+            <div class="attention-grid" id="attentionGrid" aria-label="注意力可见性矩阵"></div>
+          </article>
+
+          <article class="card">
+            <h4>注意力公式的直觉</h4>
+            <p><b>Query：</b>我现在想找什么信息？</p>
+            <p><b>Key：</b>每个历史 token 声明自己有什么信息。</p>
+            <p><b>Value：</b>真正被加权拿走的内容。</p>
+            <pre>att = softmax(q @ k.T / sqrt(head_size))
+y = att @ v</pre>
+          </article>
+        </div>
+      </section>
+
+      <section id="training">
+        <div class="section-title">
+          <h3>训练循环</h3>
+          <p>训练不是“教它知识点”，而是重复调整参数，让它更会预测下一个 token。</p>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>按一次，走一步训练</h4>
+            <div class="stepper" id="trainStepper"></div>
+            <div class="quick-actions">
+              <button class="btn primary" id="nextTrainStep" type="button">下一步</button>
+              <button class="btn" id="resetTrainStep" type="button">重置</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <h4>`train.py` 的主线</h4>
+            <p>1. 读取 config 和命令行覆盖。</p>
+            <p>2. 从 `train.bin` / `val.bin` 采样 batch。</p>
+            <p>3. 初始化模型：scratch、resume 或 GPT-2。</p>
+            <p>4. forward 得到 loss，backward 得到梯度。</p>
+            <p>5. AdamW 更新参数，定期评估和保存。</p>
+          </article>
+        </div>
+
+        <div class="card full">
+          <h4>训练规模估算器</h4>
+          <p>拖一拖参数，感受 `n_layer`、`n_head`、`n_embd`、`block_size` 怎样影响模型大小和每轮吞掉的 token 数。参数量是粗估，用来培养直觉，不替代真实打印值。</p>
+          <div class="sliders">
+            <div class="slider-row"><label>n_layer <span id="layersVal">6</span></label><input id="layers" type="range" min="2" max="24" step="1" value="6"></div>
+            <div class="slider-row"><label>n_head <span id="headsVal">6</span></label><input id="heads" type="range" min="2" max="16" step="1" value="6"></div>
+            <div class="slider-row"><label>n_embd <span id="embdVal">384</span></label><input id="embd" type="range" min="64" max="1024" step="64" value="384"></div>
+            <div class="slider-row"><label>block_size <span id="blockVal">256</span></label><input id="block" type="range" min="32" max="1024" step="32" value="256"></div>
+            <div class="slider-row"><label>batch_size <span id="batchVal">64</span></label><input id="batch" type="range" min="1" max="128" step="1" value="64"></div>
+            <div class="slider-row"><label>grad_accum <span id="accumVal">1</span></label><input id="accum" type="range" min="1" max="64" step="1" value="1"></div>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><b id="paramEstimate">--</b><span>粗估参数量</span></div>
+            <div class="stat"><b id="tokensEstimate">--</b><span>tokens / iter</span></div>
+            <div class="stat"><b id="headSize">--</b><span>每个 head 的维度</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="sampling">
+        <div class="section-title">
+          <h3>生成文本</h3>
+          <p>生成时没有梯度，只有一个循环：预测、采样、追加、再预测。</p>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>`generate()` 的 6 步</h4>
+            <pre>idx_cond = idx[:, -block_size:]
+logits, _ = model(idx_cond)
+logits = logits[:, -1, :] / temperature
+logits = keep_only_top_k(logits)
+probs = softmax(logits)
+idx = cat(idx, sample(probs))</pre>
+          </article>
+
+          <article class="card">
+            <h4>两个采样旋钮</h4>
+            <p><b>temperature</b> 越低越保守，越高越发散。</p>
+            <p><b>top_k</b> 只保留最可能的 k 个候选，避免太离谱的 token 混进来。</p>
+            <div class="note">它不是一次性吐出整段话，而是像搭积木一样，一个 token 一个 token 往后接。</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="lab">
+        <div class="section-title">
+          <h3>动手实验</h3>
+          <p>照着这个顺序做，你会从“看懂项目”走到“能改一点模型和训练”。</p>
+        </div>
+
+        <div class="grid">
+          <article class="card wide">
+            <h4>8 个练习</h4>
+            <p>这里的勾选保存在当前浏览器。跨设备同步请同时更新 <a href="../progress/checklist.md">progress/checklist.md</a>。</p>
+            <div class="checklist" id="checklist">
+              <label class="check"><input type="checkbox"><span>读 `data/shakespeare_char/prepare.py`，确认 `stoi` / `itos` 如何把字符和整数互转。</span></label>
+              <label class="check"><input type="checkbox"><span>运行 `python data/shakespeare_char/prepare.py`，观察 `train.bin`、`val.bin`、`meta.pkl` 出现。</span></label>
+              <label class="check"><input type="checkbox"><span>在 `train.py` 里找到 `get_batch()`，解释为什么 `x` 和 `y` 只差一个 token。</span></label>
+              <label class="check"><input type="checkbox"><span>在 `model.py` 里顺着 `GPT.forward()` 读一遍：token embedding -> block -> lm_head -> loss。</span></label>
+              <label class="check"><input type="checkbox"><span>在 `CausalSelfAttention.forward()` 里标出 q、k、v 的 shape 变化。</span></label>
+              <label class="check"><input type="checkbox"><span>用小配置训练一次：CPU/MPS 时记得关掉 `compile` 或改 `device`。</span></label>
+              <label class="check"><input type="checkbox"><span>用 `sample.py --out_dir=out-shakespeare-char` 采样，调 `temperature` 看输出变化。</span></label>
+              <label class="check"><input type="checkbox"><span>改一个超参数，例如 `n_layer` 或 `block_size`，预测它会如何影响速度、记忆长度和 loss。</span></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <h4>推荐命令</h4>
+            <pre>python data/shakespeare_char/prepare.py
+
+python train.py config/train_shakespeare_char.py \
+  --device=cpu --compile=False \
+  --eval_iters=20 --max_iters=200
+
+python sample.py \
+  --out_dir=out-shakespeare-char \
+  --device=cpu --max_new_tokens=300</pre>
+          </article>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h4>自测 1</h4>
+            <details>
+              <summary>为什么 GPT 训练目标是“预测下一个 token”？</summary>
+              <p>因为大量文本天然提供监督信号。给前文 `x`，真实下一个 token 就是标签 `y`。不需要人工标注，整本书都能变成训练样本。</p>
+            </details>
+          </article>
+
+          <article class="card">
+            <h4>自测 2</h4>
+            <details>
+              <summary>为什么 attention 要 causal mask？</summary>
+              <p>训练时模型同时处理一整段序列。如果不 mask，它会看到未来 token，loss 会变得虚假地低，生成时却没有未来可看。</p>
+            </details>
+          </article>
+
+          <article class="card">
+            <h4>自测 3</h4>
+            <details>
+              <summary>`block_size` 是什么？</summary>
+              <p>它是模型一次最多看的上下文长度。更大能看更远，但 attention 计算和显存压力也会明显上升。</p>
+            </details>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const moduleNotes = {
+      wte: "wte 是 token embedding。输入的整数 id 本身没有语义，embedding 表把每个 id 映射成 n_embd 维向量。",
+      wpe: "wpe 是 position embedding。Transformer 本身不天然知道顺序，所以要给第 0、1、2... 个位置各加一个位置向量。",
+      drop: "dropout 是训练时的随机丢弃，帮助模型别太死记硬背。推理时会关闭。",
+      block: "Block 是 GPT 的核心重复单元。nanoGPT 默认可堆 6 层、12 层甚至更多层，每层都让 token 和上下文再交流一次。",
+      ln: "LayerNorm 让每个位置的特征尺度更稳定。nanoGPT 使用 pre-norm：先归一化，再进入 attention 或 MLP。",
+      attn: "Causal Self-Attention 让当前位置从左侧历史 token 中取信息。causal 的意思是不能看未来。",
+      mlp: "MLP 对每个位置单独做非线性加工。它不混合不同 token，混合上下文这件事主要由 attention 负责。",
+      resid: "Residual connection 是 x + 子模块输出。它让信息和梯度更容易穿过很多层。",
+      lnf: "ln_f 是最后一次 LayerNorm，把堆叠后的表示整理一下，再交给输出层。",
+      head: "lm_head 把每个位置的 n_embd 维向量映射成 vocab_size 个分数，也就是 logits。",
+      loss: "训练时 logits 和 targets 进入 cross_entropy。目标是让真实下一个 token 的概率越来越高。",
+      generate: "generate 会反复取最后一个位置的 logits，softmax 后采样一个 token，再把它拼回输入序列。"
+    };
+
+    function setModule(key) {
+      document.querySelectorAll(".arch-box").forEach((box) => {
+        box.classList.toggle("active", box.dataset.key === key);
+      });
+      document.getElementById("moduleExplainer").textContent = moduleNotes[key];
+    }
+
+    document.querySelectorAll(".arch-box").forEach((box) => {
+      box.addEventListener("click", () => setModule(box.dataset.key));
+    });
+    setModule("wte");
+
+    const tokenInput = document.getElementById("tokenInput");
+    const tokenOutput = document.getElementById("tokenOutput");
+    function tokenizeDemo() {
+      const text = tokenInput.value || "";
+      const chars = Array.from(new Set(Array.from(text))).sort();
+      const ids = new Map(chars.map((ch, i) => [ch, i]));
+      tokenOutput.innerHTML = "";
+      Array.from(text).forEach((ch) => {
+        const span = document.createElement("span");
+        span.className = "token";
+        span.innerHTML = `<b>${ch === " " ? "space" : ch}</b><i>${ids.get(ch)}</i>`;
+        tokenOutput.appendChild(span);
+      });
+    }
+    document.getElementById("tokenizeBtn").addEventListener("click", tokenizeDemo);
+    tokenizeDemo();
+
+    const attentionWords = ["The", "model", "can", "only", "see", "past", "tokens", "."];
+    let selectedAttention = 5;
+    const attentionTokens = document.getElementById("attentionTokens");
+    const attentionGrid = document.getElementById("attentionGrid");
+
+    function renderAttention() {
+      attentionTokens.innerHTML = "";
+      attentionWords.forEach((word, i) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = `token${i === selectedAttention ? " selected" : ""}`;
+        item.innerHTML = `<b>${word}</b><i>${i}</i>`;
+        item.addEventListener("click", () => {
+          selectedAttention = i;
+          renderAttention();
+        });
+        attentionTokens.appendChild(item);
+      });
+
+      attentionGrid.innerHTML = "";
+      attentionWords.forEach((_, row) => {
+        attentionWords.forEach((__, col) => {
+          const cell = document.createElement("div");
+          const visible = col <= row;
+          const selectedRow = row === selectedAttention;
+          cell.className = `cell${visible ? "" : " locked"}`;
+          const intensity = selectedRow && visible ? 0.18 + (col + 1) / (row + 1) * 0.62 : visible ? 0.12 : 0;
+          if (visible) {
+            cell.style.background = `rgba(29, 111, 184, ${intensity.toFixed(2)})`;
+          }
+          cell.textContent = visible ? "✓" : "×";
+          attentionGrid.appendChild(cell);
+        });
+      });
+    }
+    renderAttention();
+
+    const trainSteps = [
+      ["get_batch('train')", "从 `train.bin` 里随机切片：x 是前 block_size 个 token，y 是右移一位的答案。"],
+      ["model(X, Y)", "GPT 前向传播，得到每个位置对下一个 token 的 logits，并计算 cross entropy loss。"],
+      ["loss.backward()", "反向传播，把 loss 对每个参数的梯度算出来。"],
+      ["clip_grad_norm_", "防止梯度爆炸，让一次更新别迈得太离谱。"],
+      ["optimizer.step()", "AdamW 根据梯度更新模型参数。模型此刻真的变了一点点。"],
+      ["estimate_loss()", "定期在 train/val 上估算 loss，看模型有没有学会，也看有没有过拟合。"],
+      ["torch.save()", "验证集更好或设置要求保存时，把模型、优化器和配置写到 `ckpt.pt`。"]
+    ];
+    let trainIndex = 0;
+    const trainStepper = document.getElementById("trainStepper");
+    function renderTrainSteps() {
+      trainStepper.innerHTML = "";
+      trainSteps.forEach((step, i) => {
+        const div = document.createElement("div");
+        div.className = `train-step${i === trainIndex ? " current" : ""}`;
+        div.innerHTML = `<b>${i + 1}. ${step[0]}</b><p>${step[1]}</p>`;
+        trainStepper.appendChild(div);
+      });
+    }
+    document.getElementById("nextTrainStep").addEventListener("click", () => {
+      trainIndex = (trainIndex + 1) % trainSteps.length;
+      renderTrainSteps();
+    });
+    document.getElementById("resetTrainStep").addEventListener("click", () => {
+      trainIndex = 0;
+      renderTrainSteps();
+    });
+    renderTrainSteps();
+
+    const sliderIds = ["layers", "heads", "embd", "block", "batch", "accum"];
+    function fmt(n) {
+      if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+      if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+      if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+      return String(Math.round(n));
+    }
+    function updateSizing() {
+      const nLayer = Number(document.getElementById("layers").value);
+      const nHead = Number(document.getElementById("heads").value);
+      const nEmbd = Number(document.getElementById("embd").value);
+      const block = Number(document.getElementById("block").value);
+      const batch = Number(document.getElementById("batch").value);
+      const accum = Number(document.getElementById("accum").value);
+      const vocab = 65;
+      const embeddingParams = vocab * nEmbd + block * nEmbd;
+      const blockParams = 12 * nEmbd * nEmbd + 13 * nEmbd;
+      const totalParams = embeddingParams + nLayer * blockParams + nEmbd * vocab;
+      const tokens = batch * accum * block;
+      document.getElementById("layersVal").textContent = nLayer;
+      document.getElementById("headsVal").textContent = nHead;
+      document.getElementById("embdVal").textContent = nEmbd;
+      document.getElementById("blockVal").textContent = block;
+      document.getElementById("batchVal").textContent = batch;
+      document.getElementById("accumVal").textContent = accum;
+      document.getElementById("paramEstimate").textContent = fmt(totalParams);
+      document.getElementById("tokensEstimate").textContent = fmt(tokens);
+      document.getElementById("headSize").textContent = Number.isInteger(nEmbd / nHead) ? nEmbd / nHead : "不整除";
+    }
+    sliderIds.forEach((id) => document.getElementById(id).addEventListener("input", updateSizing));
+    updateSizing();
+
+    const checks = Array.from(document.querySelectorAll("#checklist input"));
+    function updateProgress() {
+      const done = checks.filter((box) => box.checked).length;
+      localStorage.setItem("nanogpt-tutorial-checks", JSON.stringify(checks.map((box) => box.checked)));
+      document.getElementById("progressBar").style.width = `${Math.round(done / checks.length * 100)}%`;
+      document.getElementById("progressText").textContent = `完成 ${done} / ${checks.length} 个练习`;
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem("nanogpt-tutorial-checks") || "[]");
+      saved.forEach((value, i) => {
+        if (checks[i]) checks[i].checked = Boolean(value);
+      });
+    } catch {
+      // Ignore broken localStorage state.
+    }
+    checks.forEach((box) => box.addEventListener("change", updateProgress));
+    updateProgress();
+
+    const sections = Array.from(document.querySelectorAll("main section"));
+    const navLinks = Array.from(document.querySelectorAll(".nav a"));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+        });
+      });
+    }, { rootMargin: "-35% 0px -55% 0px", threshold: 0.01 });
+    sections.forEach((section) => observer.observe(section));
+  </script>
+</body>
+</html>

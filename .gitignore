@@ -1,0 +1,22 @@
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+.venv/
+venv/
+
+# Local nanoGPT clones and heavy training outputs
+nanoGPT/
+out/
+out-*/
+checkpoints/
+runs/
+*.pt
+*.pth
+*.ckpt
+*.bin
+
+# Local scratch
+local/
+tmp/
