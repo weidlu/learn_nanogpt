@@ -6,15 +6,15 @@
 
 - [x] 创建学习仓库。
 - [x] 加入互动教程。
-- [ ] clone 原 nanoGPT 仓库到当前设备。
-- [ ] 确认 Python / PyTorch 环境可用。
+- [x] clone 原 nanoGPT 仓库到当前设备。
+- [x] 确认 Python / PyTorch 环境可用。
 
 ## 1. 数据和 token
 
 - [ ] 读 `data/shakespeare_char/prepare.py`。
 - [ ] 解释 `stoi` 和 `itos`。
-- [ ] 运行 `python data/shakespeare_char/prepare.py`。
-- [ ] 找到生成的 `train.bin`、`val.bin`、`meta.pkl`。
+- [x] 运行 `python data/shakespeare_char/prepare.py`。
+- [x] 找到生成的 `train.bin`、`val.bin`、`meta.pkl`。
 
 ## 2. batch 和训练样本
 
@@ -46,7 +46,7 @@
 - [ ] 解释 gradient accumulation。
 - [ ] 解释 learning rate warmup + cosine decay。
 - [ ] 解释 checkpoint 里保存了什么。
-- [ ] 跑一次 `max_iters=200` 的小训练。
+- [x] 跑一次 `max_iters=200` 的小训练。
 
 ## 6. 生成文本
 
@@ -54,7 +54,7 @@
 - [ ] 读 `model.py` 里的 `generate()`。
 - [ ] 解释 temperature。
 - [ ] 解释 top_k。
-- [ ] 用同一个 prompt 比较两个 temperature 的输出。
+- [x] 用同一个 prompt 比较两个 temperature 的输出。
 
 ## 7. 自己改一个实验
 
